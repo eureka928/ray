@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional
 
+from ray.air.constants import TRAINING_ITERATION
 from ray.tune.logger import LoggerCallback
 from ray.tune.utils import flatten_dict
 from ray.util.annotations import PublicAPI
@@ -126,7 +127,7 @@ class TrackioLoggerCallback(LoggerCallback):
             self.log_trial_start(trial)
 
         run = self._trial_runs[trial]
-        step = result.get("training_iteration", iteration)
+        step = result.get(TRAINING_ITERATION, iteration)
 
         flat_result = flatten_dict(result, delimiter="/")
 
