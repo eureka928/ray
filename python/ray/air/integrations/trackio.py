@@ -1,4 +1,5 @@
 import logging
+import math
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 from ray.air.constants import TRAINING_ITERATION
@@ -69,6 +70,9 @@ class TrackioLoggerCallback(LoggerCallback):
 
     """
 
+    # Do not log these result keys.
+    _exclude_results = ["done", "should_checkpoint"]
+
     def __init__(
         self,
         project: str,
@@ -131,9 +135,14 @@ class TrackioLoggerCallback(LoggerCallback):
 
         flat_result = flatten_dict(result, delimiter="/")
 
+        exclude_results = self._exclude_results.copy()
+        exclude_results += self.excludes
+
         metrics = {}
         for k, v in flat_result.items():
-            if k in self.excludes:
+            if k in exclude_results:
+                continue
+            if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
                 continue
             if isinstance(v, (int, float)):
                 metrics[k] = v

@@ -167,6 +167,54 @@ class TestLogTrialResult(unittest.TestCase):
         mock_trackio.init.assert_called_once()
         mock_run.log.assert_called_once()
 
+    def test_log_trial_result_nan_inf_filtered(self, mock_import):
+        """Verify NaN and Inf values are excluded from logged metrics."""
+        mock_trackio = MagicMock()
+        mock_import.return_value = mock_trackio
+        mock_run = MagicMock()
+        mock_trackio.init.return_value = mock_run
+
+        logger = TrackioLoggerCallback(project="my_project")
+        result = {
+            "training_iteration": 1,
+            "good_metric": 0.5,
+            "nan_metric": float("nan"),
+            "inf_metric": float("inf"),
+            "neg_inf_metric": float("-inf"),
+        }
+        logger.log_trial_result(1, self.trial, result)
+
+        call_args = mock_run.log.call_args
+        logged_metrics = call_args[0][0]
+
+        self.assertIn("good_metric", logged_metrics)
+        self.assertNotIn("nan_metric", logged_metrics)
+        self.assertNotIn("inf_metric", logged_metrics)
+        self.assertNotIn("neg_inf_metric", logged_metrics)
+
+    def test_log_trial_result_exclude_results(self, mock_import):
+        """Verify _exclude_results keys (done, should_checkpoint) are not logged."""
+        mock_trackio = MagicMock()
+        mock_import.return_value = mock_trackio
+        mock_run = MagicMock()
+        mock_trackio.init.return_value = mock_run
+
+        logger = TrackioLoggerCallback(project="my_project")
+        result = {
+            "training_iteration": 1,
+            "metric1": 0.8,
+            "done": 1,
+            "should_checkpoint": 1,
+        }
+        logger.log_trial_result(1, self.trial, result)
+
+        call_args = mock_run.log.call_args
+        logged_metrics = call_args[0][0]
+
+        self.assertIn("metric1", logged_metrics)
+        self.assertNotIn("done", logged_metrics)
+        self.assertNotIn("should_checkpoint", logged_metrics)
+
 
 @patch("ray.air.integrations.trackio._import_trackio")
 class TestLogTrialEnd(unittest.TestCase):
