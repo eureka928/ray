@@ -167,6 +167,6 @@ class TrackioLoggerCallback(LoggerCallback):
             run.finish()
 
     def __del__(self):
-        for trial, run in self._trial_runs.items():
+        for trial, run in getattr(self, "_trial_runs", {}).items():
             run.finish()
         self._trial_runs = {}
