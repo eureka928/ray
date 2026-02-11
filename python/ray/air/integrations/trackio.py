@@ -1,8 +1,11 @@
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
-from ray.tune.experiment import Trial
 from ray.tune.logger import LoggerCallback
 from ray.tune.utils import flatten_dict
+from ray.util.annotations import PublicAPI
+
+if TYPE_CHECKING:
+    from ray.tune.experiment import Trial
 
 
 def _import_trackio():
@@ -19,6 +22,7 @@ def _import_trackio():
     return trackio
 
 
+@PublicAPI(stability="alpha")
 class TrackioLoggerCallback(LoggerCallback):
     """TrackioLoggerCallback for logging Tune results to Trackio.
 
@@ -82,7 +86,7 @@ class TrackioLoggerCallback(LoggerCallback):
         self.excludes = excludes or []
         self.trackio_init_kwargs = trackio_init_kwargs
 
-        self._trial_runs: Dict[Trial, object] = {}
+        self._trial_runs: Dict["Trial", object] = {}
 
     def log_trial_start(self, trial: "Trial"):
         trackio = _import_trackio()
