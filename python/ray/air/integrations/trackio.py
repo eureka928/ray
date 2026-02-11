@@ -51,6 +51,10 @@ class TrackioLoggerCallback(LoggerCallback):
         dataset_id: Hugging Face Dataset ID for metric syncing.
         tags: Tags for filtering runs.
         excludes: Metric keys to exclude from logging.
+        log_config: Whether to log the ``config`` parameter of
+            the ``results`` dict. This makes sense if parameters
+            change during training, e.g. with
+            PopulationBasedTraining. Defaults to False.
         **trackio_init_kwargs: Additional keyword arguments passed
             through to ``trackio.init()``.
 
@@ -82,6 +86,7 @@ class TrackioLoggerCallback(LoggerCallback):
         dataset_id: Optional[str] = None,
         tags: Optional[List[str]] = None,
         excludes: Optional[List[str]] = None,
+        log_config: bool = False,
         **trackio_init_kwargs,
     ):
         _import_trackio()
@@ -92,6 +97,7 @@ class TrackioLoggerCallback(LoggerCallback):
         self.dataset_id = dataset_id
         self.tags = tags
         self.excludes = excludes or []
+        self.log_config = log_config
         self.trackio_init_kwargs = trackio_init_kwargs
 
         self._trial_runs: Dict["Trial", object] = {}
@@ -137,10 +143,14 @@ class TrackioLoggerCallback(LoggerCallback):
 
         exclude_results = self._exclude_results.copy()
         exclude_results += self.excludes
+        if not self.log_config:
+            exclude_results += ["config"]
 
         metrics = {}
         for k, v in flat_result.items():
             if k in exclude_results:
+                continue
+            if not self.log_config and k.startswith("config/"):
                 continue
             if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
                 continue

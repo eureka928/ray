@@ -215,6 +215,50 @@ class TestLogTrialResult(unittest.TestCase):
         self.assertNotIn("done", logged_metrics)
         self.assertNotIn("should_checkpoint", logged_metrics)
 
+    def test_log_trial_result_log_config_false(self, mock_import):
+        """Verify config keys are excluded when log_config=False (default)."""
+        mock_trackio = MagicMock()
+        mock_import.return_value = mock_trackio
+        mock_run = MagicMock()
+        mock_trackio.init.return_value = mock_run
+
+        logger = TrackioLoggerCallback(project="my_project")
+        result = {
+            "training_iteration": 1,
+            "metric1": 0.8,
+            "config": {"lr": 0.01, "batch_size": 32},
+        }
+        logger.log_trial_result(1, self.trial, result)
+
+        call_args = mock_run.log.call_args
+        logged_metrics = call_args[0][0]
+
+        self.assertIn("metric1", logged_metrics)
+        self.assertNotIn("config/lr", logged_metrics)
+        self.assertNotIn("config/batch_size", logged_metrics)
+
+    def test_log_trial_result_log_config_true(self, mock_import):
+        """Verify config keys are included when log_config=True."""
+        mock_trackio = MagicMock()
+        mock_import.return_value = mock_trackio
+        mock_run = MagicMock()
+        mock_trackio.init.return_value = mock_run
+
+        logger = TrackioLoggerCallback(project="my_project", log_config=True)
+        result = {
+            "training_iteration": 1,
+            "metric1": 0.8,
+            "config": {"lr": 0.01, "batch_size": 32},
+        }
+        logger.log_trial_result(1, self.trial, result)
+
+        call_args = mock_run.log.call_args
+        logged_metrics = call_args[0][0]
+
+        self.assertIn("metric1", logged_metrics)
+        self.assertIn("config/lr", logged_metrics)
+        self.assertIn("config/batch_size", logged_metrics)
+
 
 @patch("ray.air.integrations.trackio._import_trackio")
 class TestLogTrialEnd(unittest.TestCase):
