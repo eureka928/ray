@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 from ray.tune.logger import LoggerCallback
@@ -6,6 +7,8 @@ from ray.util.annotations import PublicAPI
 
 if TYPE_CHECKING:
     from ray.tune.experiment import Trial
+
+logger = logging.getLogger(__name__)
 
 
 def _import_trackio():
@@ -116,6 +119,7 @@ class TrackioLoggerCallback(LoggerCallback):
 
         run = trackio.init(**init_kwargs)
         self._trial_runs[trial] = run
+        logger.debug("Started Trackio run for trial %s", trial)
 
     def log_trial_result(self, iteration: int, trial: "Trial", result: Dict):
         if trial not in self._trial_runs:
@@ -137,6 +141,8 @@ class TrackioLoggerCallback(LoggerCallback):
 
     def log_trial_end(self, trial: "Trial", failed: bool = False):
         if trial in self._trial_runs:
+            if failed:
+                logger.warning("Trial %s failed.", trial)
             run = self._trial_runs.pop(trial)
             run.finish()
 
